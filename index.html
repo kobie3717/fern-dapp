@@ -1,15 +1,10 @@
-k<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <title>Friendship Coin</title>
-
-  <!-- WalletConnect Web3Modal v3 & Ethers.js -->
-  <script 
-src="https://unpkg.com/@walletconnect/web3modal@3.6.0/dist/umd/index.js"></script>
-  <script 
-src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
+  <script src="https://unpkg.com/@walletconnect/web3modal@2.9.3/dist/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
   <script defer src="app.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,26 +12,22 @@ src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
       margin: auto;
       padding: 20px;
     }
-
     h1 {
       text-align: center;
       font-size: 2em;
       margin-bottom: 20px;
     }
-
     button, input {
       padding: 10px;
       font-size: 1em;
       margin: 5px 0;
       width: 100%;
     }
-
     #status {
       margin-top: 15px;
       font-weight: bold;
       color: #333;
     }
-
     p {
       font-size: 1em;
       margin: 10px 0;
@@ -47,27 +38,20 @@ src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
 
   <h1>🚀 Mint Your Friendship Coin</h1>
 
-  <!-- WalletConnect Button -->
   <button id="connect">Connect Wallet</button>
   <p id="wallet"></p>
 
-  <!-- Token Info -->
   <p id="balance">Checking balance...</p>
   <p id="networth"></p>
   <p id="totalMinted"></p>
 
-  <!-- Mint Button -->
   <button id="mint" disabled>Mint FREN</button>
 
-  <!-- Gift Section -->
   <h3>🎁 Gift a FREN</h3>
-  <input type="text" id="giftAddress" placeholder="Enter recipient 
-address">
+  <input type="text" id="giftAddress" placeholder="Enter recipient address">
   <button id="gift" disabled>Send FREN</button>
 
-  <!-- Status Display -->
   <p id="status"></p>
 
 </body>
 </html>
-

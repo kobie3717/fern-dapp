@@ -1,4 +1,4 @@
-const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c"; // your contract
+const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c";
 const abi = [
   "function mint() public payable",
   "function transfer(address to, uint256 amount) public returns (bool)",
@@ -8,40 +8,55 @@ const abi = [
 
 let provider, signer, contract;
 
-const projectId = "4a731443ecd601d86c796c41dbbc608b"; // your WC project ID
+const projectId = "4a731443ecd601d86c796c41dbbc608b";
 
 const bscTestnet = {
   chainId: 97,
-  name: "BSC Testnet",
+  name: "Binance Smart Chain Testnet",
   currency: "tBNB",
-  explorerUrl: "https://testnet.bscscan.com",
-  rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/"
+  rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545",
+  explorerUrl: "https://testnet.bscscan.com"
 };
+
+const chains = [
+  {
+    chainId: bscTestnet.chainId,
+    name: bscTestnet.name,
+    currency: bscTestnet.currency,
+    rpcUrl: bscTestnet.rpcUrl
+  }
+];
+
+const metadata = {
+  name: "Friendship Coin",
+  description: "Mint and gift FREN tokens to friends",
+  url: "https://fern-dapp.vercel.app",
+  icons: ["https://vercel.com/favicon.ico"]
+};
+
+const ethereumClient = new window.WalletConnectModal.EthereumClient({
+  projectId,
+  metadata,
+  chains
+});
 
 const web3Modal = new window.Web3Modal.default({
   projectId,
   themeMode: "light",
   walletConnectVersion: 2,
-  standaloneChains: [bscTestnet.chainId],
-  chains: [{
-    chainId: bscTestnet.chainId,
-    name: bscTestnet.name,
-    currency: bscTestnet.currency,
-    explorerUrl: bscTestnet.explorerUrl,
-    rpcUrl: bscTestnet.rpcUrl
-  }]
+  ethereum: ethereumClient
 });
 
 document.getElementById("connect").onclick = async () => {
   try {
-    const instance = await web3Modal.connect();
+    const instance = await web3Modal.openModal();
     provider = new ethers.BrowserProvider(instance);
     signer = await provider.getSigner();
     contract = new ethers.Contract(contractAddress, abi, signer);
     await updateUI();
   } catch (err) {
-    console.error("❌ Connection failed:", err);
-    showStatus("❌ WalletConnect failed.");
+    console.error("Wallet connection failed:", err);
+    showStatus("❌ Failed to connect wallet.");
   }
 };
 
@@ -58,17 +73,14 @@ async function updateUI() {
 
     document.getElementById("mint").disabled = balance > 0;
     document.getElementById("gift").disabled = balance === 0;
-
-    showStatus("✅ Connected");
   } catch (err) {
-    console.error("updateUI error:", err);
-    showStatus("❌ Failed to load wallet data.");
+    console.error("UI update failed:", err);
+    showStatus("❌ Failed to update UI.");
   }
 }
 
 document.getElementById("mint").onclick = async () => {
   try {
-    showStatus("⏳ Minting...");
     const tx = await contract.mint({ value: 0 });
     await tx.wait();
     showStatus("✅ Minted!");
