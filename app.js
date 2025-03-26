@@ -1,4 +1,4 @@
-const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c";
+const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c"; // your contract
 const abi = [
   "function mint() public payable",
   "function transfer(address to, uint256 amount) public returns (bool)",
@@ -6,34 +6,44 @@ const abi = [
   "function totalMinted() view returns (uint256)"
 ];
 
-let provider, signer, contract, web3modal;
+let provider, signer, contract;
 
-async function initWeb3Modal() {
-  const { EthereumProvider } = window.WalletConnectModal;
-  const { Web3Modal } = window.Web3Modal;
+const projectId = "4a731443ecd601d86c796c41dbbc608b"; // your WC project ID
 
-  web3modal = new Web3Modal({
-    projectId: "4a731443ecd601d86c796c41dbbc608b", // Your WalletConnect Project ID
-    walletConnectVersion: 2,
-    themeMode: "light",
-    themeVariables: {
-      "--w3m-accent": "#10b981"
-    },
-  });
+const bscTestnet = {
+  chainId: 97,
+  name: "BSC Testnet",
+  currency: "tBNB",
+  explorerUrl: "https://testnet.bscscan.com",
+  rpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/"
+};
 
-  document.getElementById("connect").onclick = async () => {
-    try {
-      const instance = await web3modal.connect();
-      provider = new ethers.BrowserProvider(instance);
-      signer = await provider.getSigner();
-      contract = new ethers.Contract(contractAddress, abi, signer);
-      await updateUI();
-    } catch (err) {
-      console.error("Wallet connection failed:", err);
-      showStatus("❌ Failed to connect wallet.");
-    }
-  };
-}
+const web3Modal = new window.Web3Modal.default({
+  projectId,
+  themeMode: "light",
+  walletConnectVersion: 2,
+  standaloneChains: [bscTestnet.chainId],
+  chains: [{
+    chainId: bscTestnet.chainId,
+    name: bscTestnet.name,
+    currency: bscTestnet.currency,
+    explorerUrl: bscTestnet.explorerUrl,
+    rpcUrl: bscTestnet.rpcUrl
+  }]
+});
+
+document.getElementById("connect").onclick = async () => {
+  try {
+    const instance = await web3Modal.connect();
+    provider = new ethers.BrowserProvider(instance);
+    signer = await provider.getSigner();
+    contract = new ethers.Contract(contractAddress, abi, signer);
+    await updateUI();
+  } catch (err) {
+    console.error("❌ Connection failed:", err);
+    showStatus("❌ WalletConnect failed.");
+  }
+};
 
 async function updateUI() {
   try {
@@ -48,18 +58,21 @@ async function updateUI() {
 
     document.getElementById("mint").disabled = balance > 0;
     document.getElementById("gift").disabled = balance === 0;
+
+    showStatus("✅ Connected");
   } catch (err) {
-    console.error("updateUI failed:", err);
-    showStatus("❌ Failed to fetch balance.");
+    console.error("updateUI error:", err);
+    showStatus("❌ Failed to load wallet data.");
   }
 }
 
 document.getElementById("mint").onclick = async () => {
   try {
+    showStatus("⏳ Minting...");
     const tx = await contract.mint({ value: 0 });
     await tx.wait();
-    showStatus("✅ Minted! Updating...");
-    updateUI();
+    showStatus("✅ Minted!");
+    await updateUI();
   } catch (err) {
     console.error("Mint error:", err);
     showStatus("❌ Mint failed: " + err.message);
@@ -73,9 +86,8 @@ document.getElementById("gift").onclick = async () => {
   try {
     const tx = await contract.transfer(to, 1);
     await tx.wait();
-    document.getElementById("giftAddress").value = "";
-    showStatus("✅ Gift sent! Updating...");
-    updateUI();
+    showStatus("✅ Gift sent!");
+    await updateUI();
   } catch (err) {
     console.error("Gift error:", err);
     showStatus("❌ Gift failed: " + err.message);
@@ -85,6 +97,3 @@ document.getElementById("gift").onclick = async () => {
 function showStatus(msg) {
   document.getElementById("status").innerText = msg;
 }
-
-// 🔁 Initialize WalletConnect modal
-initWeb3Modal();
