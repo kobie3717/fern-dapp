@@ -2,11 +2,14 @@
 <html>
 <head>
   <title>Friendship Coin</title>
+
+  <!-- WalletConnect Modal v3 + Ethers.js -->
+  <script 
+src="https://unpkg.com/@walletconnect/web3modal@3.6.0/dist/umd/index.js"></script>
   <script 
 src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
-  <script 
-src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script defer src="app.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,17 +17,20 @@ src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.mi
       margin: auto;
       padding: 20px;
     }
+
     h1 {
       text-align: center;
       font-size: 2em;
       margin-bottom: 20px;
     }
+
     button, input {
       padding: 10px;
       font-size: 1em;
       margin: 5px 0;
       width: 100%;
     }
+
     #status {
       margin-top: 15px;
       font-weight: bold;
@@ -34,22 +40,27 @@ src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.mi
 </head>
 <body>
 
-  <h1>�� Mint Your Friendship Coin</h1>
+  <h1>🚀 Mint Your Friendship Coin</h1>
 
+  <!-- Connect -->
   <button id="connect">Connect Wallet</button>
   <p id="wallet"></p>
 
+  <!-- Display Info -->
   <p id="balance">Checking balance...</p>
   <p id="networth"></p>
   <p id="totalMinted">🧾 Checking total minted...</p>
 
+  <!-- Mint -->
   <button id="mint" disabled>Mint FREN</button>
 
+  <!-- Gift -->
   <h3>🎁 Gift a FREN</h3>
   <input type="text" id="giftAddress" placeholder="Enter recipient 
 address">
   <button id="gift" disabled>Send FREN</button>
 
+  <!-- Status -->
   <p id="status"></p>
 
 </body>

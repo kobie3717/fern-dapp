@@ -6,25 +6,33 @@ const abi = [
   "function totalMinted() view returns (uint256)"
 ];
 
-let provider, signer, contract;
+let provider, signer, contract, web3modal;
 
-document.getElementById("connect").onclick = async () => {
-  await connectWallet();
-};
+async function initWeb3Modal() {
+  const { EthereumProvider } = window.WalletConnectModal;
+  const { Web3Modal } = window.Web3Modal;
 
-async function connectWallet() {
-  try {
-    await window.ethereum.request({ method: "eth_requestAccounts" });
-    provider = new ethers.BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
-    contract = new ethers.Contract(contractAddress, abi, signer);
+  web3modal = new Web3Modal({
+    projectId: "4a731443ecd601d86c796c41dbbc608b", // Your WalletConnect Project ID
+    walletConnectVersion: 2,
+    themeMode: "light",
+    themeVariables: {
+      "--w3m-accent": "#10b981"
+    },
+  });
 
-    await updateUI();
-    startAutoRefresh();
-  } catch (err) {
-    console.error("Connect error:", err);
-    showStatus("❌ Failed to connect wallet.");
-  }
+  document.getElementById("connect").onclick = async () => {
+    try {
+      const instance = await web3modal.connect();
+      provider = new ethers.BrowserProvider(instance);
+      signer = await provider.getSigner();
+      contract = new ethers.Contract(contractAddress, abi, signer);
+      await updateUI();
+    } catch (err) {
+      console.error("Wallet connection failed:", err);
+      showStatus("❌ Failed to connect wallet.");
+    }
+  };
 }
 
 async function updateUI() {
@@ -40,20 +48,18 @@ async function updateUI() {
 
     document.getElementById("mint").disabled = balance > 0;
     document.getElementById("gift").disabled = balance === 0;
-
-    showStatus("✅ Synced");
   } catch (err) {
-    console.error("Update UI error:", err);
+    console.error("updateUI failed:", err);
     showStatus("❌ Failed to fetch balance.");
   }
 }
 
 document.getElementById("mint").onclick = async () => {
   try {
-    showStatus("⏳ Minting...");
     const tx = await contract.mint({ value: 0 });
     await tx.wait();
-    showStatus("✅ Minted! Balance will refresh automatically.");
+    showStatus("✅ Minted! Updating...");
+    updateUI();
   } catch (err) {
     console.error("Mint error:", err);
     showStatus("❌ Mint failed: " + err.message);
@@ -62,36 +68,23 @@ document.getElementById("mint").onclick = async () => {
 
 document.getElementById("gift").onclick = async () => {
   const to = document.getElementById("giftAddress").value.trim();
-  if (!ethers.isAddress(to)) {
-    alert("❌ Invalid address.");
-    return;
-  }
+  if (!ethers.isAddress(to)) return alert("❌ Invalid address.");
 
   try {
-    showStatus("🎁 Sending FREN...");
     const tx = await contract.transfer(to, 1);
     await tx.wait();
     document.getElementById("giftAddress").value = "";
-    showStatus("✅ Gift sent! Balance will refresh automatically.");
+    showStatus("✅ Gift sent! Updating...");
+    updateUI();
   } catch (err) {
     console.error("Gift error:", err);
     showStatus("❌ Gift failed: " + err.message);
   }
 };
 
-function startAutoRefresh() {
-  setInterval(async () => {
-    try {
-      provider = new ethers.BrowserProvider(window.ethereum);
-      signer = await provider.getSigner();
-      contract = new ethers.Contract(contractAddress, abi, signer);
-      await updateUI();
-    } catch (err) {
-      console.error("Auto-refresh failed:", err);
-    }
-  }, 5000);
+function showStatus(msg) {
+  document.getElementById("status").innerText = msg;
 }
 
-function showStatus(message) {
-  document.getElementById("status").innerText = message;
-}
+// 🔁 Initialize WalletConnect modal
+initWeb3Modal();
