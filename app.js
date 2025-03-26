@@ -1,4 +1,4 @@
-const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c";
+const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c"; // Update if needed
 const abi = [
   "function mint() public payable",
   "function transfer(address to, uint256 amount) public returns (bool)",
