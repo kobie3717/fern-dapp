@@ -18,11 +18,10 @@ async function connectWallet() {
     provider = new ethers.BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
     contract = new ethers.Contract(contractAddress, abi, signer);
-
     await updateUI();
   } catch (err) {
     console.error("Connect error:", err);
-    showStatus("❌ Failed to connect wallet.");
+    showStatus("❌ Wallet connection failed.");
   }
 }
 
@@ -40,10 +39,10 @@ async function updateUI() {
     document.getElementById("mint").disabled = balance > 0;
     document.getElementById("gift").disabled = balance === 0;
 
-    showStatus("");
+    showStatus("✅ Wallet synced.");
   } catch (err) {
-    console.error("Update UI error:", err);
-    showStatus("❌ Failed to update balance.");
+    console.error("UI update error:", err);
+    showStatus("❌ Failed to load balance.");
   }
 }
 
@@ -52,14 +51,9 @@ document.getElementById("mint").onclick = async () => {
     showStatus("⏳ Minting...");
     const tx = await contract.mint({ value: 0 });
     await tx.wait();
-    runConfetti();
-    showStatus("✅ Minted! Updating balance shortly...");
 
-    setTimeout(async () => {
-      showStatus("🔁 Refreshing...");
-      await connectWallet();
-      showStatus("✅ Balance updated!");
-    }, 10000);
+    showStatus("✅ Minted! Waiting for balance to update...");
+    setTimeout(forceRefresh, 10000); // wait 10 seconds then manually refresh
   } catch (err) {
     console.error("Mint error:", err);
     showStatus("❌ Mint failed: " + err.message);
@@ -77,29 +71,31 @@ document.getElementById("gift").onclick = async () => {
     showStatus("🎁 Sending FREN...");
     const tx = await contract.transfer(to, 1);
     await tx.wait();
-    document.getElementById("giftAddress").value = "";
-    runConfetti();
-    showStatus("✅ Gift sent! Updating balance shortly...");
 
-    setTimeout(async () => {
-      showStatus("🔁 Refreshing...");
-      await connectWallet();
-      showStatus("✅ Balance updated!");
-    }, 10000);
+    document.getElementById("giftAddress").value = "";
+    showStatus("✅ Gift sent! Waiting for balance to update...");
+    setTimeout(forceRefresh, 10000); // wait 10 seconds then manually refresh
   } catch (err) {
     console.error("Gift error:", err);
     showStatus("❌ Gift failed: " + err.message);
   }
 };
 
-function runConfetti() {
-  confetti({
-    particleCount: 150,
-    spread: 70,
-    origin: { y: 0.6 }
-  });
+async function forceRefresh() {
+  try {
+    // Rebuild everything from scratch
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    contract = new ethers.Contract(contractAddress, abi, signer);
+
+    await updateUI();
+    showStatus("✅ Balance updated!");
+  } catch (err) {
+    console.error("Force refresh failed:", err);
+    showStatus("❌ Could not update balance.");
+  }
 }
 
-function showStatus(message) {
-  document.getElementById("status").innerText = message;
+function showStatus(msg) {
+  document.getElementById("status").innerText = msg;
 }
