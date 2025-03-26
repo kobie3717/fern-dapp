@@ -1,4 +1,4 @@
-const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c"; // Update if needed
+const contractAddress = "0xda1a9d9C315f86766fEE64B801c4448D7D3a087c";
 const abi = [
   "function mint() public payable",
   "function transfer(address to, uint256 amount) public returns (bool)",
@@ -28,6 +28,11 @@ async function initProvider() {
 
 async function updateUI() {
   try {
+    // Force fresh provider/signer each time
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    contract = new ethers.Contract(contractAddress, abi, signer);
+
     const address = await signer.getAddress();
     const balance = Number(await contract.balanceOf(address));
     const total = Number(await contract.totalMinted());
@@ -101,9 +106,14 @@ function startCountdown(seconds, callback) {
 }
 
 async function reconnect() {
-  await window.ethereum.request({ method: "eth_requestAccounts" });
-  await initProvider();
-  await updateUI();
+  try {
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    await initProvider();
+    await updateUI();
+  } catch (err) {
+    console.error("Reconnect error:", err);
+    showStatus("❌ Reconnect failed: " + err.message);
+  }
 }
 
 function runConfetti() {
