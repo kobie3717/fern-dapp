@@ -9,30 +9,25 @@ const abi = [
 let provider, signer, contract;
 
 document.getElementById("connect").onclick = async () => {
+  await connectWallet();
+};
+
+async function connectWallet() {
   try {
-    if (!window.ethereum) throw new Error("MetaMask not installed");
     await window.ethereum.request({ method: "eth_requestAccounts" });
-    await initProvider();
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    contract = new ethers.Contract(contractAddress, abi, signer);
+
     await updateUI();
   } catch (err) {
     console.error("Connect error:", err);
     showStatus("❌ Failed to connect wallet.");
   }
-};
-
-async function initProvider() {
-  provider = new ethers.BrowserProvider(window.ethereum);
-  signer = await provider.getSigner();
-  contract = new ethers.Contract(contractAddress, abi, signer);
 }
 
 async function updateUI() {
   try {
-    // Force fresh provider/signer each time
-    provider = new ethers.BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
-    contract = new ethers.Contract(contractAddress, abi, signer);
-
     const address = await signer.getAddress();
     const balance = Number(await contract.balanceOf(address));
     const total = Number(await contract.totalMinted());
@@ -48,7 +43,7 @@ async function updateUI() {
     showStatus("");
   } catch (err) {
     console.error("Update UI error:", err);
-    showStatus("❌ Failed to fetch balance.");
+    showStatus("❌ Failed to update balance.");
   }
 }
 
@@ -58,8 +53,13 @@ document.getElementById("mint").onclick = async () => {
     const tx = await contract.mint({ value: 0 });
     await tx.wait();
     runConfetti();
-    showStatus("✅ Minted! Refreshing in 10s...");
-    startCountdown(10, reconnect);
+    showStatus("✅ Minted! Updating balance shortly...");
+
+    setTimeout(async () => {
+      showStatus("🔁 Refreshing...");
+      await connectWallet();
+      showStatus("✅ Balance updated!");
+    }, 10000);
   } catch (err) {
     console.error("Mint error:", err);
     showStatus("❌ Mint failed: " + err.message);
@@ -79,42 +79,18 @@ document.getElementById("gift").onclick = async () => {
     await tx.wait();
     document.getElementById("giftAddress").value = "";
     runConfetti();
-    showStatus("✅ Gift sent! Refreshing in 10s...");
-    startCountdown(10, reconnect);
+    showStatus("✅ Gift sent! Updating balance shortly...");
+
+    setTimeout(async () => {
+      showStatus("🔁 Refreshing...");
+      await connectWallet();
+      showStatus("✅ Balance updated!");
+    }, 10000);
   } catch (err) {
     console.error("Gift error:", err);
     showStatus("❌ Gift failed: " + err.message);
   }
 };
-
-function startCountdown(seconds, callback) {
-  const statusEl = document.getElementById("status");
-  let current = seconds;
-
-  const countdown = setInterval(() => {
-    statusEl.innerText = `🔄 Refreshing in ${current} second${current !== 1 ? 's' : ''}...`;
-    current--;
-
-    if (current < 0) {
-      clearInterval(countdown);
-      statusEl.innerText = "🔁 Reconnecting...";
-      callback().then(() => {
-        showStatus("✅ Balance updated!");
-      });
-    }
-  }, 1000);
-}
-
-async function reconnect() {
-  try {
-    await window.ethereum.request({ method: "eth_requestAccounts" });
-    await initProvider();
-    await updateUI();
-  } catch (err) {
-    console.error("Reconnect error:", err);
-    showStatus("❌ Reconnect failed: " + err.message);
-  }
-}
 
 function runConfetti() {
   confetti({
